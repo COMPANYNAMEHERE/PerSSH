@@ -1,0 +1,25 @@
+# Binaries
+/perssh-client
+/perssh-server
+/dist/
+*.exe
+*.test
+*.out
+
+# Dependencies
+vendor/
+
+# Local Data & Config (Do not commit user data)
+*.ini
+*.log
+*_data/
+id_rsa
+known_hosts
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

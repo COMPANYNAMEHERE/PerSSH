@@ -1,0 +1,5 @@
+# This directory is a Syncthing folder marker.
+# Do not delete.
+
+folderID: env-manager-root
+created: 2026-01-02T14:54:48+01:00
