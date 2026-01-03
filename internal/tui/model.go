@@ -213,7 +213,7 @@ func (m Model) updateLogin(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = stateDashboard
 		m.decoder = json.NewDecoder(m.sshClient.GetStdout())
 		
-		return m, tea.Batch(m.cmdPollTelemetry(), m.cmdPollList(), m.waitForPacket())
+		return m, tea.Batch(m.cmdPollTelemetry(), m.cmdPollList(), m.cmdPollListTick(), m.waitForPacket())
 	}
 	
 	if err, ok := msg.(errMsg); ok {
@@ -285,9 +285,20 @@ func (m Model) updateDashboard(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	}
-	if _, ok := msg.(tickMsg); ok {
-		return m, tea.Batch(m.cmdPollTelemetry(), m.cmdPollList())
+
+	// Handle telemetry tick (every 2s)
+	// We want frequent updates for CPU/RAM usage.
+	if _, ok := msg.(telemetryTickMsg); ok {
+		return m, m.cmdPollTelemetry()
 	}
+
+	// Handle list tick (every 6s)
+	// We reduce the frequency of listing containers to avoid unnecessary load,
+	// as container state changes less frequently than system stats.
+	if _, ok := msg.(listTickMsg); ok {
+		return m, tea.Batch(m.cmdPollList(), m.cmdPollListTick())
+	}
+
 	return m, nil
 }
 
@@ -395,7 +406,10 @@ func (m Model) viewCreateEnv() string {
 
 // --- Helpers ---
 
-type tickMsg time.Time
+// Split polling messages to allow different frequencies
+type telemetryTickMsg time.Time
+type listTickMsg time.Time
+
 type loginSuccessMsg struct { client ssh.RemoteInterface }
 type errMsg struct { error }
 
@@ -438,7 +452,15 @@ func (m Model) cmdPollTelemetry() tea.Cmd {
 		if m.sshClient != nil {
 			m.sshClient.SendRequest(common.Request{ID: "telemetry", Type: common.CmdGetTelemetry})
 		}
-		return tickMsg(t)
+		return telemetryTickMsg(t)
+	})
+}
+
+// cmdPollListTick schedules the next list refresh.
+// Poll every 6 seconds to reduce load (3x less frequent than telemetry).
+func (m Model) cmdPollListTick() tea.Cmd {
+	return tea.Tick(6*time.Second, func(t time.Time) tea.Msg {
+		return listTickMsg(t)
 	})
 }
 
