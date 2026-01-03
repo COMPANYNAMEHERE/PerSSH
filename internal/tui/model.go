@@ -301,7 +301,13 @@ func (m Model) viewDashboard() string {
 	)
 	
 	// Menu
-	menu := styleDim.Render("[C] Create  [L] Refresh  [S] Start/Stop  [X] Remove  [Q] Quit")
+	menu := fmt.Sprintf("%s Create  %s Refresh  %s Start/Stop  %s Remove  %s Quit",
+		styleGreen.Render("[C]"),
+		styleGreen.Render("[L]"),
+		styleGreen.Render("[S]"),
+		styleGreen.Render("[X]"),
+		styleGreen.Render("[Q]"),
+	)
 	
 	// Content
 	var s strings.Builder
@@ -318,7 +324,8 @@ func (m Model) viewDashboard() string {
 	
 	content := s.String()
 	if len(m.containers) == 0 {
-		content += styleDim.Render("(No environments running)")
+		content += "\n" + styleDim.Render("No environments running.") + "\n\n"
+		content += styleGreen.Render("Press 'C' to create your first environment")
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, 
