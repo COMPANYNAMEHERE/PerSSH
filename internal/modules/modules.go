@@ -44,8 +44,12 @@ func (m *MinecraftModule) GetDefaults() common.CreateEnvPayload {
 		Type: common.EnvTypeMinecraft,
 		Image: "itzg/minecraft-server", // Popular image
 		Ports: []string{"25565:25565"},
-		EnvVars: map[string]string{
-			"EULA": "TRUE",
+		Minecraft: common.MinecraftConfig{
+			EULA:       true,
+			ServerType: "VANILLA",
+			Version:    "latest",
+			Motd:       "A PerSSH Managed Server",
+			Features:   []string{common.FeatureAikarsFlags},
 		},
 	}
 }

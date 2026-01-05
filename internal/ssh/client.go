@@ -49,6 +49,14 @@ func NewClient(host, user string, port int, password string, keyPath string) (*C
 
 	if password != "" {
 		authMethods = append(authMethods, ssh.Password(password))
+		// Also add KeyboardInteractive as a fallback for some servers
+		authMethods = append(authMethods, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
+			answers = make([]string, len(questions))
+			for i := range questions {
+				answers[i] = password
+			}
+			return answers, nil
+		}))
 	}
 
 	return &Client{
@@ -98,13 +106,6 @@ func (c *Client) DeployAgent(localBinaryPath string) error {
 
 	remotePath := "./perssh-server"
 	
-	// Check if exists
-	_, err = sftpClient.Stat(remotePath)
-	if err == nil {
-		// Exists. For now assume it's good. In future, check version/checksum.
-		return nil
-	}
-
 	// Upload
 	f, err := os.Open(localBinaryPath)
 	if err != nil {

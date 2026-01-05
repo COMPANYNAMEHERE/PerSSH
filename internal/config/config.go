@@ -10,8 +10,14 @@ import (
 
 // ClientConfig holds the local settings.
 type ClientConfig struct {
+	General GeneralConfig `ini:"General"`
 	Theme   ThemeConfig   `ini:"Theme"`
 	Network NetworkConfig `ini:"Network"`
+	Session SessionConfig `ini:"Session"`
+}
+
+type GeneralConfig struct {
+	Debug bool `ini:"Debug"`
 }
 
 type ThemeConfig struct {
@@ -22,14 +28,26 @@ type NetworkConfig struct {
 	Timeout int `ini:"Timeout"` // Seconds
 }
 
+type SessionConfig struct {
+	LastHost string `ini:"LastHost"`
+	LastUser string `ini:"LastUser"`
+	LastPort int    `ini:"LastPort"`
+}
+
 // DefaultClientConfig returns standard defaults.
 func DefaultClientConfig() *ClientConfig {
 	return &ClientConfig{
+		General: GeneralConfig{
+			Debug: false,
+		},
 		Theme: ThemeConfig{
 			Color: "Green",
 		},
 		Network: NetworkConfig{
 			Timeout: 30,
+		},
+		Session: SessionConfig{
+			LastPort: 22,
 		},
 	}
 }

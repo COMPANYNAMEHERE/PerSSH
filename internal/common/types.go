@@ -14,6 +14,7 @@ const (
 	CmdStopEnv        CommandType = "STOP_ENV"
 	CmdRemoveEnv      CommandType = "REMOVE_ENV"
 	CmdGetLogs        CommandType = "GET_LOGS"
+	CmdSendInput      CommandType = "SEND_INPUT"
 )
 
 // Request is the generic RPC request structure sent from Client to Server.
@@ -52,6 +53,23 @@ const (
 	EnvTypeMinecraft EnvironmentType = "MINECRAFT"
 )
 
+// MinecraftConfig holds specific settings for Minecraft environments.
+type MinecraftConfig struct {
+	EULA       bool     `json:"eula"`
+	ServerType string   `json:"server_type"` // VANILLA, FORGE, FABRIC, ARCLIGHT
+	Version    string   `json:"version"`     // "latest", "1.20.4"
+	Modpack    string   `json:"modpack"`     // URL or ID (CurseForge/Modrinth)
+	Motd       string   `json:"motd"`
+	Features   []string `json:"features"` // e.g., "AIKAR_FLAGS", "AUTO_UPDATE"
+	Plugins    []string `json:"plugins"`  // List of URLs
+	OpUsers    []string `json:"op_users"` // List of usernames
+}
+
+const (
+	FeatureAikarsFlags = "AIKAR_FLAGS"
+	FeatureAutoUpdate  = "AUTO_UPDATE"
+)
+
 // CreateEnvPayload defines parameters for creating a new environment.
 type CreateEnvPayload struct {
 	Name        string            `json:"name"`
@@ -61,9 +79,8 @@ type CreateEnvPayload struct {
 	EnvVars     map[string]string `json:"env_vars"`
 	RamLimit    string            `json:"ram_limit,omitempty"` // e.g., "2g"
 	
-	// Minecraft Specific
-	MinecraftEULA bool   `json:"minecraft_eula"`
-	MinecraftOP   string `json:"minecraft_op"`
+	// Configuration
+	Minecraft MinecraftConfig `json:"minecraft,omitempty"`
 }
 
 // ContainerInfo describes a running environment.

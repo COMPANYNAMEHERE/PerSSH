@@ -1,7 +1,11 @@
 package sysinfo
 
 import (
+	"fmt"
 	"math"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -36,15 +40,49 @@ func GetTelemetry() (*common.TelemetryData, error) {
 	tempVal := 0.0
 	temps, err := host.SensorsTemperatures()
 	if err == nil {
-		for _, t := range temps {
-			// Basic heuristic: find first core temp or package id 0
-			if t.SensorKey == "coretemp_package_id_0" || t.SensorKey == "k10temp_tctl" {
-				tempVal = t.Temperature
+		// Common sensor names for Intel/AMD
+		priorityKeys := []string{
+			"coretemp_package_id_0",
+			"coretemp_core_0",
+			"k10temp_tctl",
+			"k10temp_tdie",
+			"cpu_thermal", // Raspberry Pi
+		}
+
+		found := false
+		for _, key := range priorityKeys {
+			for _, t := range temps {
+				if t.SensorKey == key {
+					tempVal = t.Temperature
+					found = true
+					break
+				}
+			}
+			if found {
 				break
 			}
-			// Fallback: take the first positive value if nothing else matches
-			if tempVal == 0 && t.Temperature > 0 {
-				tempVal = t.Temperature
+		}
+	}
+
+	// Fallback 2: Manual scan of hwmon if gopsutil failed or returned 0
+	if tempVal == 0 {
+		for i := 0; i < 10; i++ {
+			path := fmt.Sprintf("/sys/class/hwmon/hwmon%d", i)
+			if _, err := os.Stat(path); err != nil {
+				continue
+			}
+
+			nameB, _ := os.ReadFile(filepath.Join(path, "name"))
+			name := string(nameB)
+
+			// Priority for CPU sensors
+			if strings.Contains(name, "coretemp") || strings.Contains(name, "k10temp") || strings.Contains(name, "acpitz") {
+				tempB, err := os.ReadFile(filepath.Join(path, "temp1_input"))
+				if err == nil {
+					fmt.Sscanf(string(tempB), "%f", &tempVal)
+					tempVal /= 1000.0
+					break
+				}
 			}
 		}
 	}
